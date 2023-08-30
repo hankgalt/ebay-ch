@@ -166,16 +166,6 @@ export function* generatePoints({
   }
 }
 
-// useEffect(() => {
-//   fetch("https://api.nasa.gov/insight_weather/?api_key=DEMO_KEY&feedtype=json&ver=1.0")
-//   .then(response => response.json())
-//       // 4. Setting *dogImage* to the image url that we received from the response above
-//   .then(dat => {
-//     console.log("data: ", { data: dat })
-//     setData(dat)
-//   })
-// },[])
-
 const sampleWeatherResp: WeatherInsightsResponse = {
   solKeys: [ "259", "260", "261", "262", "263", "264", "265"],
   "259": {

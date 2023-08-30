@@ -39,7 +39,7 @@ const ImageCarousel = ({ limit }: ImageCarouselProps) => {
   useEffect(() => {
     if (!loaded && currPage > 0 && !loading) {
       setLoading(true);
-      fetchPhotos(dayjs().subtract(15, 'day').format('YYYY-MM-DD'), currPage)
+      fetchPhotos(dayjs().subtract(7, 'day').format('YYYY-MM-DD'), currPage)
         .then(dat => {
           if ((dat as Error).message) {
             setError((dat as Error).message);
@@ -91,21 +91,24 @@ const ImageCarousel = ({ limit }: ImageCarouselProps) => {
               textAlign: 'center',
               alignSelf: 'center',
               cursor: 'pointer',
+              margin: '10px'
             }}
             onClick={() => setStart(start - 1)}
           >
             {'<<'}
           </span>
         )}
-        {currList.length > 0 &&
-          currList.map((pht: MPhoto) => (
-            <ImageCard
-              key={pht.id}
-              photo={pht}
-              height={'150px'}
-              width={'150px'}
-            />
-          ))}
+        <div style={{ width: '70%', display: 'flex', flexDirection: 'row'}}>
+          {currList.length > 0 &&
+            currList.map((pht: MPhoto) => (
+              <ImageCard
+                key={pht.id}
+                photo={pht}
+                height={'150px'}
+                width={'150px'}
+              />
+            ))}
+        </div>
         {start + limit < photos.length && (
           <span
             style={{
@@ -113,6 +116,7 @@ const ImageCarousel = ({ limit }: ImageCarouselProps) => {
               textAlign: 'center',
               alignSelf: 'center',
               cursor: 'pointer',
+              margin: '10px'
             }}
             onClick={() => setStart(start + 1)}
           >

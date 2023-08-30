@@ -19,7 +19,6 @@ const ImageCard = ({
     if (photo.imgSrc) {
       const img = new Image();
       img.onload = () => {
-        console.log('image loaded');
         setLoadedSrc(img.src);
         setLoaded(true);
       };
@@ -29,11 +28,6 @@ const ImageCard = ({
       img.src = photo.imgSrc;
     }
   }, [photo]);
-
-  useEffect(() => {
-    if (loaded)
-      console.log('image state: ', { loaded, loadedSrc, id: photo.id });
-  }, [loaded, loadedSrc]);
 
   return (
     <div style={{ padding: '3px' }}>
