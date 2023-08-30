@@ -10,6 +10,7 @@ type ImageCarouselProps = {
 const ImageCarousel = ({ limit }: ImageCarouselProps) => {
   const [currPage, setCurrPage] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState('');
   const [start, setStart] = useState(0);
   const [photos, setPhotos] = useState<MPhoto[]>([]);
@@ -18,8 +19,10 @@ const ImageCarousel = ({ limit }: ImageCarouselProps) => {
   );
 
   useEffect(() => {
-    if (start !== 0 && photos.length > 0 && start + 2 * limit > photos.length) {
-      setCurrPage(currPage + 1);
+    if (start !== 0 && photos.length > 0) {
+      if (!loaded && start + (2 * limit) > photos.length) {
+        setCurrPage(currPage + 1);
+      }
     }
   }, [start]);
 
@@ -31,29 +34,24 @@ const ImageCarousel = ({ limit }: ImageCarouselProps) => {
           : [...photos.slice(start, photos.length - 1)]
         : []
     );
-  }, [start]);
+  }, [start, photos]);
 
   useEffect(() => {
-    setCurrList(
-      photos
-        ? start + limit < photos.length
-          ? [...photos.slice(start, start + limit)]
-          : [...photos.slice(start, photos.length - 1)]
-        : []
-    );
-  }, [photos]);
-
-  useEffect(() => {
-    if (currPage > 0 && !loading) {
+    if (!loaded && currPage > 0 && !loading) {
       setLoading(true);
       fetchPhotos(dayjs().subtract(15, 'day').format('YYYY-MM-DD'), currPage)
         .then(dat => {
           if ((dat as Error).message) {
             setError((dat as Error).message);
             setLoading(false);
+            setLoaded(true)
           } else {
-            const newSet = [...photos].concat(dat as MPhoto[]);
-            setPhotos(newSet);
+            if ((dat as MPhoto[]).length > 0) {
+              const newSet = [...photos].concat(dat as MPhoto[]);
+              setPhotos(newSet);
+            } else {
+              setLoaded(true)
+            }
             setError('');
             setLoading(false);
           }
@@ -61,6 +59,7 @@ const ImageCarousel = ({ limit }: ImageCarouselProps) => {
         .catch(err => {
           setError(err.message);
           setLoading(false);
+          setLoaded(true)
         });
     }
   }, [currPage]);
