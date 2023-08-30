@@ -15,15 +15,14 @@ const buttonStyle = {
 };
 
 const Pagination = ({ start, end, total, onPrev, onNext }: PaginationProps) => {
-  console.log('pagination state', { start, end, total });
   return (
-    <div style={{ width: '100%' }}>
+    <div style={{ width: '100%', alignSelf: 'center', textAlign: 'center'}}>
       {start > 0 && (
         <span style={buttonStyle} onClick={() => onPrev()}>
           {'prev'}
         </span>
       )}
-      {end < total && (
+      {end < total -1 && (
         <span style={buttonStyle} onClick={() => onNext()}>
           {'next'}
         </span>

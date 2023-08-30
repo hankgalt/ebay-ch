@@ -9,66 +9,81 @@ type ImagePanelProps = {
   selectedDate: string;
 };
 
+type Photos = {
+  photos: MPhoto[]
+  loaded: boolean
+  lastFetched: number
+}
+
 const ImagePanel = ({ selectedDate, limit }: ImagePanelProps) => {
   const [currPage, setCurrPage] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState('');
   const [start, setStart] = useState(0);
-  const [photos, setPhotos] = useState<{ [key: string]: MPhoto[] }>(
-    selectedDate !== '' ? { [selectedDate]: [] } : {}
+  const [photos, setPhotos] = useState<{ [key: string]: Photos }>(
+    selectedDate !== '' ? { [selectedDate]: { loaded: false, lastFetched: 0, photos: [] } } : {}
   );
   const [currList, setCurrList] = useState<MPhoto[]>(
     selectedDate !== '' &&
       photos[selectedDate] &&
-      photos[selectedDate].length > 0
-      ? photos[selectedDate].slice(0, limit)
+      photos[selectedDate].photos.length > 0
+      ? photos[selectedDate].photos.slice(0, limit)
       : []
   );
 
   useEffect(() => {
-    const newSet = photos[selectedDate] ? [...photos[selectedDate]] : [];
     setPhotos({
       ...photos,
-      [selectedDate]: newSet,
+      [selectedDate]: photos[selectedDate] ? photos[selectedDate] : { loaded: false, lastFetched: 0, photos: [] },
     });
     setStart(0);
+    setCurrPage(1)
+    setLoaded(false)
   }, [selectedDate]);
 
   useEffect(() => {
     if (
       start !== 0 &&
       selectedDate !== '' &&
-      photos[selectedDate].length > 0 &&
-      start + 2 * limit > photos[selectedDate].length
+      photos[selectedDate].photos.length > 0
     ) {
-      setCurrPage(currPage + 1);
+      if (!loaded && start + 2 * limit > photos[selectedDate].photos.length) {
+        setCurrPage(currPage + 1);
+      }
     }
   }, [start]);
 
   useEffect(() => {
+    // console.log("ImagePanel: start or photos updated, setting current", {
+    //   currPage,
+    //   start,
+    //   numPhotos: photos && photos[selectedDate] ? photos[selectedDate].photos.length : 0,
+    //   end: start + limit < photos[selectedDate].photos.length ? start + limit : photos[selectedDate].photos.length - 1
+    // })
     setCurrList(
-      photos
-        ? start + limit < photos[selectedDate].length
-          ? [...photos[selectedDate].slice(start, start + limit)]
+      photos && photos[selectedDate]
+        ? start + limit < photos[selectedDate].photos.length
+          ? [...photos[selectedDate].photos.slice(start, start + limit)]
           : [
-              ...photos[selectedDate].slice(
+              ...photos[selectedDate].photos.slice(
                 start,
-                photos[selectedDate].length - 1
+                photos[selectedDate].photos.length - 1
               ),
             ]
         : []
     );
-  }, [start]);
+  }, [start, photos]);
 
   useEffect(() => {
     setCurrList(
       photos
-        ? start + limit < photos[selectedDate].length
-          ? [...photos[selectedDate].slice(start, start + limit)]
+        ? start + limit < photos[selectedDate].photos.length
+          ? [...photos[selectedDate].photos.slice(start, start + limit)]
           : [
-              ...photos[selectedDate].slice(
+              ...photos[selectedDate].photos.slice(
                 start,
-                photos[selectedDate].length - 1
+                photos[selectedDate].photos.length - 1
               ),
             ]
         : []
@@ -76,26 +91,54 @@ const ImagePanel = ({ selectedDate, limit }: ImagePanelProps) => {
   }, [photos]);
 
   useEffect(() => {
-    console.log('ImagePanel: state', { selectedDate });
+    const today = dayjs().format('YYYY-MM-DD')
+    const isToday = selectedDate === today
+    const inPast = dayjs().isAfter(dayjs(selectedDate), 'day')
+    const alreadyLoaded = loaded || (photos[selectedDate] && photos[selectedDate].loaded)
+    const lastFetched = photos[selectedDate] ? photos[selectedDate].lastFetched : 0
+
+    // console.log("ImagePanel: checking if data fetch required", { today, selectedDate, isToday, inPast, loading, alreadyLoaded, currPage, lastFetched})
+
     if (
-      selectedDate !== dayjs().format('YYYY-MM-DD') &&
-      currPage > 0 &&
-      !loading
+      !loading &&
+      !alreadyLoaded &&
+      currPage > lastFetched &&
+      !isToday &&
+      inPast &&
+      currPage > 0
     ) {
+      // console.log("ImagePanel: fetching data", { currPage, today, selectedDate, isToday, inPast, loading, loaded})
       setLoading(true);
       fetchPhotos(selectedDate, currPage)
         .then(dat => {
           if ((dat as Error).message) {
             setError((dat as Error).message);
             setLoading(false);
-          } else {
-            const newSet = photos[selectedDate]
-              ? [...photos[selectedDate]].concat(dat as MPhoto[])
-              : [...(dat as MPhoto[])];
+
+            const newSet = { ...photos[selectedDate], lastFetched: currPage, loaded: true }
             setPhotos({
               ...photos,
               [selectedDate]: newSet,
             });
+            setLoaded(true)
+          } else {
+            if ((dat as MPhoto[]).length > 0) {
+              const newSet = photos[selectedDate]
+                ? { ...photos[selectedDate], lastFetched: currPage, photos: [...photos[selectedDate].photos].concat(dat as MPhoto[])}
+                : { loaded: false, lastFetched: currPage, photos: [...(dat as MPhoto[])] }
+
+              setPhotos({
+                ...photos,
+                [selectedDate]: newSet,
+              });
+            } else {
+              const newSet = { ...photos[selectedDate], lastFetched: currPage, loaded: true }
+              setPhotos({
+                ...photos,
+                [selectedDate]: newSet,
+              });
+              setLoaded(true)
+            }
             setError('');
             setLoading(false);
           }
@@ -103,6 +146,13 @@ const ImagePanel = ({ selectedDate, limit }: ImagePanelProps) => {
         .catch(err => {
           setError(err.message);
           setLoading(false);
+
+          const newSet = { ...photos[selectedDate], lastFetched: currPage, loaded: true }
+          setPhotos({
+            ...photos,
+            [selectedDate]: newSet,
+          });
+          setLoaded(true)
         });
     }
   }, [currPage, selectedDate]);
@@ -123,7 +173,7 @@ const ImagePanel = ({ selectedDate, limit }: ImagePanelProps) => {
         {currList.length > 0 &&
           currList.map((pht: MPhoto) => <ImageCard key={pht.id} photo={pht} />)}
       </div>
-      {photos[selectedDate] && photos[selectedDate].length > 0 && (
+      {photos[selectedDate] && photos[selectedDate].photos.length > 0 && (
         <div
           style={{
             width: '100%',
@@ -134,8 +184,8 @@ const ImagePanel = ({ selectedDate, limit }: ImagePanelProps) => {
         >
           <Pagination
             start={start}
-            end={start + limit}
-            total={photos[selectedDate].length}
+            end={start + limit < photos[selectedDate].photos.length ? start + limit : photos[selectedDate].photos.length - 1}
+            total={photos[selectedDate].photos.length}
             onPrev={() => setStart(start - limit)}
             onNext={() => setStart(start + limit)}
           />
