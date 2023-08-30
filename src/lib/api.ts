@@ -50,6 +50,22 @@ type WeatherInsightsResponse =  (WeatherInsights | {}) & {
 
 const API_KEY = 'DEMO_KEY'
 
+const mapPhoto = (resp:{ [key: string]: any}): MPhoto => {
+  return {
+    id: resp["id"],
+    imgSrc: resp["img_src"],
+    earthDate: resp["earth_date"],
+    rover: {
+      id: resp["rover"]["id"],
+      name: resp["rover"]["name"]
+    }
+  }
+}
+
+const mapPhotos = (photos: { [key: string]: any}[]): MPhoto[] => {
+  return photos.map(mapPhoto)
+}
+
 export const fetchPhotos = async (
   date: string,
   page: number
@@ -60,7 +76,7 @@ export const fetchPhotos = async (
     .then(response => response.json())
     .then(dat => {
       if (dat.photos) {
-        return dat.photos;
+        return mapPhotos(dat.photos);
       } else {
         if (dat.error) {
           return dat.error;
