@@ -26,11 +26,12 @@ const ImagePanel = ({ selectedDate, limit }: ImagePanelProps) => {
   );
   const [currList, setCurrList] = useState<MPhoto[]>(
     selectedDate !== '' &&
-      photos[selectedDate] &&
+      photos[selectedDate]?.photos &&
       photos[selectedDate].photos.length > 0
       ? photos[selectedDate].photos.slice(0, limit)
       : []
   );
+  const [currCount, setCurrCount] = useState(photos && photos[selectedDate]?.photos ? photos[selectedDate].photos.length : 0)
 
   useEffect(() => {
     setPhotos({
@@ -43,52 +44,30 @@ const ImagePanel = ({ selectedDate, limit }: ImagePanelProps) => {
   }, [selectedDate]);
 
   useEffect(() => {
+    setCurrCount(photos && photos[selectedDate]?.photos ? photos[selectedDate].photos.length : 0)
+  }, [photos, selectedDate]);
+
+  useEffect(() => {
     if (
       start !== 0 &&
       selectedDate !== '' &&
-      photos[selectedDate].photos.length > 0
+      currCount > 0
     ) {
-      if (!loaded && start + 2 * limit > photos[selectedDate].photos.length) {
+      if (!loaded && start + 2 * limit > currCount) {
         setCurrPage(currPage + 1);
       }
     }
-  }, [start]);
+  }, [start, selectedDate, currCount, currPage, loaded]);
 
   useEffect(() => {
-    // console.log("ImagePanel: start or photos updated, setting current", {
-    //   currPage,
-    //   start,
-    //   numPhotos: photos && photos[selectedDate] ? photos[selectedDate].photos.length : 0,
-    //   end: start + limit < photos[selectedDate].photos.length ? start + limit : photos[selectedDate].photos.length - 1
-    // })
-    setCurrList(
-      photos && photos[selectedDate]
-        ? start + limit < photos[selectedDate].photos.length
-          ? [...photos[selectedDate].photos.slice(start, start + limit)]
-          : [
-              ...photos[selectedDate].photos.slice(
-                start,
-                photos[selectedDate].photos.length - 1
-              ),
-            ]
-        : []
-    );
+    if (photos && photos[selectedDate]?.photos) {
+      const phs = photos[selectedDate].photos
+      const end = start + limit < phs.length ? start + limit : phs.length - 1
+      setCurrList([...phs.slice(start, end)])
+    } else {
+      setCurrList([])
+    }
   }, [start, photos]);
-
-  useEffect(() => {
-    setCurrList(
-      photos
-        ? start + limit < photos[selectedDate].photos.length
-          ? [...photos[selectedDate].photos.slice(start, start + limit)]
-          : [
-              ...photos[selectedDate].photos.slice(
-                start,
-                photos[selectedDate].photos.length - 1
-              ),
-            ]
-        : []
-    );
-  }, [photos]);
 
   useEffect(() => {
     const today = dayjs().format('YYYY-MM-DD')
@@ -173,7 +152,7 @@ const ImagePanel = ({ selectedDate, limit }: ImagePanelProps) => {
         {currList.length > 0 &&
           currList.map((pht: MPhoto) => <ImageCard key={pht.id} photo={pht} />)}
       </div>
-      {photos[selectedDate] && photos[selectedDate].photos.length > 0 && (
+      {currCount > 0 && (
         <div
           style={{
             width: '100%',
@@ -184,8 +163,8 @@ const ImagePanel = ({ selectedDate, limit }: ImagePanelProps) => {
         >
           <Pagination
             start={start}
-            end={start + limit < photos[selectedDate].photos.length ? start + limit : photos[selectedDate].photos.length - 1}
-            total={photos[selectedDate].photos.length}
+            end={start + limit < currCount ? start + limit : currCount - 1}
+            total={currCount}
             onPrev={() => setStart(start - limit)}
             onNext={() => setStart(start + limit)}
           />

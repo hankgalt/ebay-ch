@@ -10,6 +10,44 @@ export type MPhoto = {
   rover: Rover;
 };
 
+type CompassDirPt = {
+  degrees: number
+  point: string
+  right: number
+  up: number
+  numSamples: number
+}
+
+type WindDirectionData = {
+  [key: string]: CompassDirPt
+  common?: CompassDirPt
+}
+
+type SensorData = {
+  ave: number
+  min: number
+  max: number
+  numSamples: number
+}
+
+type WeatherDataObject = {
+  temp?: SensorData
+  windSp?: SensorData
+  press?: SensorData
+  windDir?: WindDirectionData
+  firstUTC: string
+  lastUTC: string
+  season: string
+}
+
+type WeatherInsights = {
+  [key: string]: WeatherDataObject
+}
+
+type WeatherInsightsResponse =  (WeatherInsights | {}) & {
+  solKeys: string[]
+}
+
 const API_KEY = 'DEMO_KEY'
 
 export const fetchPhotos = async (
@@ -121,3 +159,65 @@ export function* generatePoints({
 //     setData(dat)
 //   })
 // },[])
+
+const sampleWeatherResp: WeatherInsightsResponse = {
+  solKeys: [ "259", "260", "261", "262", "263", "264", "265"],
+  "259": {
+    temp: {
+      ave: -71.233, numSamples: 326642, min: -101.024, max: -27.149
+    },
+    windSp: {
+      ave: 4.35, numSamples: 154146, min: 0.156, max: 17.617
+    },
+    press: {
+      ave: 761.006, numSamples: 163012, min: 742.1498, max: 780.3891
+    },
+    windDir: {
+      common: {
+        degrees: 202.5,
+        point: "SSW",
+        right: -0.382683432365,
+        up: -0.923879532511,
+        numSamples: 28551
+      },
+      "8": {
+        degrees: 180.0,
+        point: "S",
+        right: 0.0,
+        up: -1.0,
+        numSamples: 17699
+      },
+      "9": {
+        degrees: 202.5,
+        point: "SSW",
+        right: -0.382683432365,
+        up: -0.923879532511,
+        numSamples: 28551
+      },
+      "10": {
+        degrees: 225.0,
+        point: "SW",
+        right: -0.707106781187,
+        up: -0.707106781187,
+        numSamples: 27124
+      }
+    },
+    firstUTC: "2019-08-19T08:03:59Z",
+    lastUTC: "2019-08-20T08:43:34Z",
+    season: "winter"
+  },
+  "260": {
+    temp: {
+      ave: -75.95, numSamples: 300789, min: -101.715, max: -28.634
+    },
+    press: {
+      ave: 762.462, numSamples: 149206, min: 741.1254, max:  777.796
+    },
+    windDir: {
+      common: null
+    },
+    firstUTC: "2019-08-19T08:03:59Z",
+    lastUTC: "2019-08-20T08:43:34Z",
+    season: "winter"
+  }
+}
